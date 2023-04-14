@@ -1,7 +1,7 @@
 
 # test on synthetic data
 
-( Rho_custom <- sim_RHO( 3 , eta=2 )
+( Rho_custom <- sim_RHO( 3 , eta=2 ) )
 sim_data <- sim_layers( N=25 , M=3 , eta=2 , alpha=rep(0,3) , Rho=Rho_custom )
 
 sim_dat <- sim_data
