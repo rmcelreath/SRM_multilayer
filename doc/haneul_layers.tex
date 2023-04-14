@@ -1,0 +1,221 @@
+%!TEX TS-program = xelatex
+%!TEX encoding = UTF-8 Unicode
+\documentclass[reqno ,12pt]{amsart}
+\usepackage[foot]{amsaddr}
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[paperwidth=7in,paperheight=10in,text={5in,8in},left=1in,top=1in,headheight=0.25in,headsep=0.4in,footskip=0.4in]{geometry}
+%\usepackage{mathtools}
+\usepackage{subfigure}
+\usepackage{lineno}
+\usepackage{natbib} %this allows for styles in referencing
+%\bibpunct[, ]{(}{)}{,}{a}{}{,}
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\cov}{cov}
+\DeclareMathOperator{\E}{E}
+\DeclareMathOperator{\logit}{logit}
+
+\synctex=1
+
+\newcommand*\patchAmsMathEnvironmentForLineno[1]{%
+  \expandafter\let\csname old#1\expandafter\endcsname\csname #1\endcsname
+  \expandafter\let\csname oldend#1\expandafter\endcsname\csname end#1\endcsname
+  \renewenvironment{#1}%
+     {\linenomath\csname old#1\endcsname}%
+     {\csname oldend#1\endcsname\endlinenomath}}%
+\newcommand*\patchBothAmsMathEnvironmentsForLineno[1]{%
+  \patchAmsMathEnvironmentForLineno{#1}%
+  \patchAmsMathEnvironmentForLineno{#1*}}%
+\AtBeginDocument{%
+\patchBothAmsMathEnvironmentsForLineno{equation}%
+\patchBothAmsMathEnvironmentsForLineno{align}%
+\patchBothAmsMathEnvironmentsForLineno{flalign}%
+\patchBothAmsMathEnvironmentsForLineno{alignat}%
+\patchBothAmsMathEnvironmentsForLineno{gather}%
+\patchBothAmsMathEnvironmentsForLineno{multline}%
+}
+
+%\usepackage{lmodern}
+%\usepackage{unicode-math}
+\usepackage{mathspec}
+\usepackage{xltxtra}
+\usepackage{xunicode}
+\defaultfontfeatures{Mapping=tex-text}
+%\setsansfont[Scale=MatchLowercase,Mapping=tex-text]{Helvetica}
+%\setmonofont[Scale=0.85]{Bitstream Vera Sans Mono}
+\setmainfont[Scale=1,Ligatures={Common}]{Adobe Caslon Pro}
+\setromanfont[Scale=1,Ligatures={Common}]{Adobe Caslon Pro}
+\setmathrm[Scale=1]{Adobe Caslon Pro}
+\setmathfont(Digits,Latin)[Numbers={Lining,Proportional}]{Adobe Caslon Pro}
+
+\definecolor{linenocolor}{gray}{0.6}
+\renewcommand\thelinenumber{\color{linenocolor}\arabic{linenumber}}
+
+\usepackage{fix-cm}
+
+%\usepackage{hanging}
+
+\setcounter{totalnumber}{1}
+
+\newcommand{\mr}{\mathrm}
+\newcommand{\tsc}[1]{\text{\textsc{#1}}}
+
+\begin{document}
+
+\title[Every Correlation Everywhere All At Once]{Every Correlation Everywhere All At Once: Modeling Reciprocity in Multi-Layer Directed Social Networks Using Observational and Self-Report Data}
+\author{Richard McElreath}
+\address{Department of Human Behavior, Ecology and Culture, Max Planck Institute for Evolutionary Anthropology, Leipzig, Germany}
+\email{richard\_mcelreath@eva.mpg.de}
+
+%\date{\today}
+
+\maketitle
+
+{\vspace{-6pt}\footnotesize\begin{center}\today\end{center}\vspace{12pt}}
+
+\linenumbers
+\modulolinenumbers[3]
+
+
+%begin{abstract}{
+%\noindent {\small
+%abstract}
+%\end{abstract}
+
+\section{Goal}
+
+Suppose a community of $N$ individuals who may practice $M$ different directed behaviors (layers) towards one another. Reciprocity could exist within a dyad $[i,j]$ both within each behavior ($i$ and $j$ are balanced for a given layer) and between different behaviors ($i$ and $j$ are balanced between layers 1 and 2). Our goal is to infer these different reciprocities at the dyad level. 
+
+We also anticipate different kinds of data about each layer, both observations of directed behavior and self-report. These data have different reliabilities, and self-report is prone to disagreement within dyads. Therefore we need to model error in self-report on top of the underlying network.
+
+\section{Strategy}
+
+We have two problems to solve. First, how to add layers to an SRM. Second, how to use both observations and self-report while respecting the different reliabilities of each.
+
+\subsection{Layers}
+
+We develop a layered social relations model (SRM) for any arbitrary number of directed behaviors. In a typical SRM, there is a single directed behavior. A single correlation parameter is sufficient to model balance in behavior between individuals within dyads:
+\begin{align*}
+	\begin{pmatrix}d_{ij} \\ d_{ji}\end{pmatrix} \sim \text{MVNormal} \left( \begin{bmatrix} 0 \\ 0 \end{bmatrix} , 
+	\begin{bmatrix} \sigma^2 & \rho \sigma^2 \\ \rho \sigma^2 & \sigma^2 \end{bmatrix}
+	 \right)
+\end{align*}
+where $d_{ij}$ and $d_{ji}$ are dyad-specific varying effects for the dyad comprising individuals $i$ and $j$. 
+
+To extend this to more than one behavior (layer), we need a larger covariance structure. Consider two behaviors. Now we require four varying effects for each dyad, each expressing the offset for a behavior $k$ and a direction $ij$ or $ji$. It also implies four correlation parameters:
+\begin{enumerate}
+\item $\rho_{W12}$: The correlation within an individual between layers. Do individuals who perform behavior 1 also tend to perform behavior 2 within the same dyads?
+
+\item $\rho_{B1}$: The correlation between individuals in layer 1. This is analogous to the $\rho$ parameter in the single-layer SRM.
+
+\item $\rho_{B2}$: The correlation between individuals in layer 2. 
+
+\item $\rho_{B12}$: The correlation between individuals between layers 1 and 2. This allows for balance across layers. For example, it is possible that individual $i$ directs behavior 1 to individual $j$, but individual $j$ directs only behavior 2 to individual $i$.
+\end{enumerate}
+The resulting correlation matrix is highly structured. For ease of notation, let $w_{kl}$ indicate the within-person correlation between layers $k$ and $l$. Let $r_{k}$ be the between-person correlation in layer $k$. And let $r_{kl}$ be the between-person correlation between layers $k$ and $l$. Then for the 2-layer case we have:
+\begin{align*}
+\mathbf{R} = \begin{bmatrix} 
+	1 & w_{12} & r_{1} & r_{12} \\ 
+	 & 1 & r_{12} & r_{2} \\ 
+	 &  & 1 & w_{12} \\ 
+	 &  &  & 1 
+\end{bmatrix}
+\end{align*}
+This defines a vector of dyad varying effects $\mathbf d= \{ d_{121}, d_{122} , d_{211} , d_{212} \}$, where the the indexes are: actor, recipient, layer.
+
+
+
+For $M$ layers, we require:
+\begin{itemize}
+\item $\frac{M!}{2!(M-2)!}$ within-person $w_{kl}$ parameters
+\item $\frac{M!}{2!(M-2)!}$ between-person, within-layer $r_k$ parameters
+\item $\frac{M!}{2!(M-2)!}$ between-person, between-layer $r_{kl}$ parameters
+\end{itemize}
+So for $M$ layers, we require a total of $\frac{3M!}{2!(M-2)!}$ correlation parameters. For $M=3$, we require 9. For $M=5$, we require 30. The resulting correlation matrix has dimension $2M$. Just as an example, here is $\mathbf{R}$ for $M=3$:
+\begin{align*}
+\mathbf{R} = \begin{bmatrix} 
+	1 & w_{12} & w_{13} & r_{1} & r_{12} & r_{13} \\ 
+	 & 1 & w_{23} & r_{12} & r_2 & r_{23} \\ 
+	 &  & 1 & r_{13} & r_{23} & r_3 \\ 
+	 &  &  & 1 & w_{12} & w_{13} \\
+	 &  &  & & 1 & w_{23} \\
+	 &  &  &  &  &  1
+\end{bmatrix}
+\end{align*}
+In principle, each layer could have a unique standard deviation, implying another $M$ scale parameters used in constructing the covariance matrix for the $2M$ varying effects.
+
+The matrix $\mathbf{R}$ is symmetric both in the usual way for a correlation matrix, the upper and lower triangles are reflections of one another, but also in the other direction, along the other diagonal from bottom-left to upper-right. There is a sub-matrix in the upper-left for the $w$ correlations and another in the lower-right that are identical, because the individuals $i$ and $j$ in the dyad are exchangeable. And the sub-matrix in the upper-right, for the $r$ parameters, could be reflected along the bizarro-diagonal because the layers are exchangeable. This makes it easy to generate the matrix for any $M$, by construction first the two separate sub-matrices. 
+Just for fun, here's $M=9$:
+\begin{align*}
+\arraycolsep=1.4pt\def\arraystretch{1}\small
+\left[\begin{array}{cccccccccccccccccc}
+1 & w_{12} & w_{13} & w_{14} & w_{15} & w_{16} & w_{17} & w_{18} & w_{19} & r_1 & r_{12} & r_{13} & r_{14} & r_{15} & r_{16} & r_{17} & r_{18} & r_{19} \\ 
+   & 1 & w_{23} & w_{24} & w_{25} & w_{26} & w_{27} & w_{28} & w_{29} & r_{12} & r_2 & r_{23} & r_{24} & r_{25} & r_{26} & r_{27} & r_{28} & r_{29} \\ 
+   &  & 1 & w_{34} & w_{35} & w_{36} & w_{37} & w_{38} & w_{39} & r_{13} & r_{23} & r_3 & r_{34} & r_{35} & r_{36} & r_{37} & r_{38} & r_{39} \\ 
+   &  &  & 1 & w_{45} & w_{46} & w_{47} & w_{48} & w_{49} & r_{14} & r_{24} & r_{34} & r_4 & r_{45} & r_{46} & r_{47} & r_{48} & r_{49} \\ 
+   &  &  &  & 1 & w_{56} & w_{57} & w_{58} & w_{59} & r_{15} & r_{25} & r_{35} & r_{45} & r_5 & r_{56} & r_{57} & r_{58} & r_{59} \\ 
+   &  &  &  &  & 1 & w_{67} & w_{68} & w_{69} & r_{16} & r_{26} & r_{36} & r_{46} & r_{56} & r_6 & r_{67} & r_{68} & r_{69} \\ 
+   &  &  &  &  &  & 1 & w_{78} & w_{79} & r_{17} & r_{27} & r_{37} & r_{47} & r_{57} & r_{67} & r_7 & r_{78} & r_{79} \\ 
+   &  &  &  &  &  &  & 1 & w_{89} & r_{18} & r_{28} & r_{38} & r_{48} & r_{58} & r_{68} & r_{78} & r_8 & r_{89} \\ 
+   &  &  &  &  &  &  &  & 1 & r_{19} & r_{29} & r_{39} & r_{49} & r_{59} & r_{69} & r_{79} & r_{89} & r_9 \\ 
+   &  &  &  &  &  &  &  &  & 1 & w_{12} & w_{13} & w_{14} & w_{15} & w_{16} & w_{17} & w_{18} & w_{19} \\ 
+   &  &  &  &  &  &  &  &  &  & 1 & w_{23} & w_{24} & w_{25} & w_{26} & w_{27} & w_{28} & w_{29} \\ 
+   &  &  &  &  &  &  &  &  &  &  & 1 & w_{34} & w_{35} & w_{36} & w_{37} & w_{38} & w_{39} \\ 
+   &  &  &  &  &  &  &  &  &  &  &  & 1 & w_{45} & w_{46} & w_{47} & w_{48} & w_{49} \\ 
+   &  &  &  &  &  &  &  &  &  &  &  &  & 1 & w_{56} & w_{57} & w_{58} & w_{59} \\ 
+   &  &  &  &  &  &  &  &  &  &  &  &  &  & 1 & w_{67} & w_{68} & w_{69} \\ 
+   &  &  &  &  &  &  &  &  &  &  &  &  &  &  & 1 & w_{78} & w_{79} \\ 
+   &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  & 1 & w_{89} \\ 
+   &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  & 1
+\end{array}
+\right]
+\end{align*}
+
+Once $\mathbf{R}$ is defined, the remainder of the model is a standard SRM. For example, for Poisson observations of behavior in each layer:
+\begin{align*}
+	Y_{ijk} &\sim \text{Poisson}(\lambda_{ijk})\\
+	\log \lambda_{ijk} &= \alpha_k + G_{ik} + R_{jk} + d_{ijk}\\
+	\mathbf d &\sim \text{MVNormal}( 0 , \mathbf{S R S} )
+\end{align*}
+where $\mathbf{S}$ is an appropriate vector of scale parameters for the layers and $G_{ik}$ and $R_{jk}$ are standard SRM generalized giving and receiving offsets in layer $k$.
+
+The size of the matrix $\mathbf{R}$ presents challenges for defining coherent prior correlation matrices, since the $w$ and $r$ parameters cannot in principle be independent and still construct valid correlation matrices. In practice, independent priors can be assigned to each $w$ and $r$, but prior predictive simulations are necessary to understand what such a prior actually implies in the sample space.
+As $M$ grows, priors may need to be increasingly narrow (and centered on zero) so that the joint prior covers valid correlation matrices.
+
+An approach that seems to work well is to define independent LKJ correlation matrix priors for the $w$ sub-matrix, the $r$ sub-matrix without its within-layer diagonal (top-left to bottom-right), and the $r$ within-layer diagonal. This does not ensure positive semidefinite matrices, once the sub-matrices are composed into the full matrix. But it is good enough to allow the sampler to get started and it seems to function well on synthetic data.
+
+\subsection{General behavior}
+
+The terms $G_{ik}$ and $R_{jk}$ model general behavior that is not dependent upon network ties (the $d$ parameters). In a single-layer SRM, these varying effects are simply individual-level varying effects with a two-dimensional Gaussian prior. With $M>1$, this prior is naturally of higher dimension. We require two parameters for each layer, so $2M$ in total for each individual in the sample, and if every correlation is of interest, a covariance matrix of dimension $2M$ as well. Or each layer can be assigned an independent 2D Gaussian prior, if correlations across layers are not of interest or value in partial pooling.
+
+\subsection{Self-report data}
+
+In the previous sections, we've outlined an estimator for the rate $\lambda_{ijk}$ of observed directed behavior $k$ from individual $i$ to $j$. Now we anticipate having in addition to direct observation of $k$ self-reports from both $i$ and $j$. Self-report data present the additional challenge of being unreliable. People may under-report behavior or over-report behavior in the network. And these biases could be directional, with for example under-reporting of in-degree and over-reporting of out-degree.
+
+When there is observational data to ground-truth self-report with, for at least some individuals, then we can use this information to improve the value of self-reported behavior. Also, when self-report is double-sampled so that both members of a dyad report on the same directed edge, then it is sometimes possible to estimate the reliability this way as well. We aim to do both in the same model.
+
+Let $Y_{ijk}$ be observed behavior from $i$ to $j$ in layer $k$. Let $X_{ijk,i}$ be $i$'s self-report of behavior to $j$ in layer $k$. Let $X_{ijk,j}$ be similarly $j$'s report of $i$'s behavior to $j$ in layer $k$. We consider the case where $X$ is binary, but the approach could be extended to count data.
+
+The most general model for $X$ is to adapt an item-response framework. In principle $X$ is an item response that reflects $Y$ through unobserved aspects of the reporting individual. Let $\ell_{ijk} = \log \lambda_{ijk}$ be the expected log rate of behavior from $i$ to $j$ in layer $k$, as defined in the previous sections. Then the log-odds that $i$ reports out-directed behavior, i.e. $X_{ijk,i}=1$, is:
+\begin{align*}
+\logit p_{ijk,i} &= \delta_{ik} ( \ell_{ijk} - \beta_{ik} ) + \gamma_{ik}
+\end{align*}
+The self-report process is governed by three latent parameters.
+\begin{enumerate}
+\item $\beta_{ik}$: Individual $i$'s threshold for reporting behavior. Larger values of $\beta$ require larger values of $\ell$ for a report.
+\item $\delta_{k}$: Individual $i$'s discrimination. This is a positive real value that determines how quickly the probability of a report increases as $\ell$ increases. When $\delta=0$, or is just very small, then reports are essentially random with respect to $\ell$, the real rate of behavior.
+\item $\gamma_{ik}$: Individual $i$'s tendency to over- or under-report behavior across all dyads. If $\delta=0$, then $\gamma_{ik}$ provides a base rate of reporting. If it is omitted, then the ``guessing'' rate is always one-half.
+\end{enumerate}
+We also need to consider reports of received behavior. So these parameters need an additional subscript for direction, 1 for out and 2 for in. This gives us:
+\begin{align*}
+\logit p_{ijk,i} &= \delta_{ik1} ( \ell_{ijk} - \beta_{ik1} ) + \gamma_{ik1}\\
+\logit p_{jik,i} &= \delta_{ik2} ( \ell_{jik} - \beta_{ik2} ) + \gamma_{ik2}
+\end{align*}
+
+Obviously we cannot estimate all of these. So either informative priors or simpler formulations are necessary. However it is important to outline the general case and be transparent about which decisions are made to make the model tractable. For example, $\delta$ could vary only by layer, not by individual. But this isn't as bad as it would be in an ordinary IRT, because the variable $\ell_{ijk}$ is a sum of parameters that are informed by observed behavior as well. 
+
+%\clearpage
+%\bibliographystyle{newapa}
+%\bibliography{covert}
+
+\end{document}
